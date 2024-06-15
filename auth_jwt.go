@@ -297,7 +297,7 @@ func (mw *GfJWTMiddleware) LoginHandler(ctx context.Context) (tokenString string
 
 	data, err := mw.Authenticator(ctx)
 	if err != nil {
-		mw.unauthorized(ctx, http.StatusUnauthorized, mw.HTTPStatusMessageFunc(err, ctx))
+		mw.unauthorized(ctx, http.StatusMethodNotAllowed, mw.HTTPStatusMessageFunc(err, ctx))
 		return
 	}
 
@@ -313,7 +313,7 @@ func (mw *GfJWTMiddleware) LoginHandler(ctx context.Context) (tokenString string
 	}
 
 	if _, ok := claims[mw.IdentityKey]; !ok {
-		mw.unauthorized(ctx, http.StatusInternalServerError, mw.HTTPStatusMessageFunc(ErrMissingIdentity, ctx))
+		mw.unauthorized(ctx, http.StatusMethodNotAllowed, mw.HTTPStatusMessageFunc(ErrMissingIdentity, ctx))
 		return
 	}
 
@@ -323,7 +323,7 @@ func (mw *GfJWTMiddleware) LoginHandler(ctx context.Context) (tokenString string
 
 	tokenString, err = mw.signedString(token)
 	if err != nil {
-		mw.unauthorized(ctx, http.StatusUnauthorized, mw.HTTPStatusMessageFunc(ErrFailedTokenCreation, ctx))
+		mw.unauthorized(ctx, http.StatusMethodNotAllowed, mw.HTTPStatusMessageFunc(ErrFailedTokenCreation, ctx))
 		return
 	}
 
