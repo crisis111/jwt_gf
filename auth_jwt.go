@@ -158,7 +158,7 @@ var (
 	// IdentityKey default identity key
 	IdentityKey = "identity"
 	// The blacklist stores tokens that have not expired but have been deactivated.
-	blacklist = gcache.New()
+	Blacklist = gcache.New()
 )
 
 // New for check error with GfJWTMiddleware
@@ -245,7 +245,7 @@ func New(mw *GfJWTMiddleware) *GfJWTMiddleware {
 	}
 
 	if mw.CacheAdapter != nil {
-		blacklist.SetAdapter(mw.CacheAdapter)
+		Blacklist.SetAdapter(mw.CacheAdapter)
 	}
 
 	if mw.BlacklistPrefix == "" {
@@ -352,14 +352,13 @@ func (mw *GfJWTMiddleware) LogoutHandler(ctx context.Context) {
 		return
 	}
 
-	err = mw.setBlacklist(ctx, token, claims)
+	err = mw.SetBlacklist(ctx, token, claims)
 
 	if err != nil {
 		mw.unauthorized(ctx, http.StatusUnauthorized, mw.HTTPStatusMessageFunc(err, ctx))
 		return
 	}
 
-	return
 }
 
 // RefreshHandler can be used to refresh a token. The token still needs to be valid on refresh.
@@ -407,7 +406,7 @@ func (mw *GfJWTMiddleware) RefreshToken(ctx context.Context) (string, time.Time,
 	}
 
 	// set old token in blacklist
-	err = mw.setBlacklist(ctx, token, claims)
+	err = mw.SetBlacklist(ctx, token, claims)
 	if err != nil {
 		return "", time.Now(), err
 	}
@@ -770,7 +769,7 @@ func (mw *GfJWTMiddleware) middlewareImpl(ctx context.Context) {
 	//c.Next() todo
 }
 
-func (mw *GfJWTMiddleware) setBlacklist(ctx context.Context, token string, claims jwt.MapClaims) error {
+func (mw *GfJWTMiddleware) SetBlacklist(ctx context.Context, token string, claims jwt.MapClaims) error {
 	// The goal of MD5 is to reduce the key length.
 	token, err := gmd5.EncryptString(token)
 
@@ -785,7 +784,7 @@ func (mw *GfJWTMiddleware) setBlacklist(ctx context.Context, token string, claim
 
 	key := mw.BlacklistPrefix + token
 	// global gcache
-	err = blacklist.Set(ctx, key, true, duration)
+	err = Blacklist.Set(ctx, key, true, duration)
 
 	if err != nil {
 		return err
@@ -804,7 +803,7 @@ func (mw *GfJWTMiddleware) inBlacklist(ctx context.Context, token string) (bool,
 
 	key := mw.BlacklistPrefix + tokenRaw
 	// Global gcache
-	if in, err := blacklist.Contains(ctx, key); err != nil {
+	if in, err := Blacklist.Contains(ctx, key); err != nil {
 		return false, nil
 	} else {
 		return in, nil
